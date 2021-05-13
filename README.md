@@ -9,6 +9,7 @@
 ### 2.2.cd train dir and organize your own datasets and label as example description.
 ### 2.3.the directory names you create maybe not equal to the code, check and rectify them in code.
 ### 2.4.Pipeline for automatically identifying ED and ES:
+![image](https://github.com/hkx97/echo/blob/main/moxing%20.png)
 # 3.envs:  this step is easy ~
 ### 3.1.install anaconda python=3.7 from https://www.anaconda.com/  
 ### 3.2.conda create --name yourenvs python=3.7  ==> create a envs  
