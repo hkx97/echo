@@ -1,5 +1,6 @@
 # echo
 echo process code
+![image](https://github.com/hkx97/echo/blob/main/assessment.png)
 
 envs:  
 1.install anaconda python=3.7 from https://www.anaconda.com/  
