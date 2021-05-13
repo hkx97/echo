@@ -5,6 +5,9 @@
 ### 3.you can use the example.dcm for a start. Just input "./example.dcm"  
 ![image](https://github.com/hkx97/echo/blob/main/assessment.png)
 
+# Performing on your own datasets  
+## Different cardiac views like a2c a4c plax psax and so on are accepted.
+### 
 ## envs:  
 ### 1.install anaconda python=3.7 from https://www.anaconda.com/  
 ### 2.conda create --name yourenvs python=3.7  ==> create a envs  
