@@ -35,7 +35,7 @@ def load_datasets(filepath, sample_list, label_list, mark, a4c_or_a2c, m):
                 if position == len(label)-1:
                     break
                 j = label[position+1]
-                for t in range(i,j):
+                for t in range(i+3,j-3):
                     #  load imgs: from number i to number j-1-->pair1
                     #                        i+1            j-->pair2
                     img_p1 = cv2.imread(filepath+"Patient"+("000"+str(sample_list[number]))[-4:] +
