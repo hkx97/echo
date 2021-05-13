@@ -6,8 +6,9 @@ from postprocessing import *
 
 
 def deleteAmong10frames(List):
-    #如果区间10内包含多个预测的帧，例如【1，11】这样11需要被删除，否则如果label是6会导致重复计数
-    #[1,3,5,13,15,22,32,42,55,64,66]-->[1, 13, 32, 55, 66]
+    # after all
+    # avoid the situation like: perd is [1,11] label is 6 --> 1 ,11 satisfy the TP defination ,but count repeatly.
+    # work as :[1,3,5,13,15,22,32,42,55,64,66]-->[1, 13, 32, 55, 66]
     for i in range(len(List)-1):
         if not List[i+1]-List[i]>10:
             List.remove(List[i+1])
@@ -17,31 +18,19 @@ def deleteAmong10frames(List):
     
     
 def pingjiazhibiao(result):
-    """result is model pred
-       Truth_label function is input as "result"
-       return result is ed(abnormal,accuracy,frame missing),es and sample_missing
     """
-    # 帧异常率 = 预测的帧在6帧（不包括6帧）内没有对应的标签的数量/预测出来的帧的总数
-    # 帧准确率 = 预测的帧在4帧（包括4帧）内有对应的标签的帧数量/预测的帧总数
-    # 帧缺失率 = 标签中的帧与预测的帧不存在对应关系（6帧以外没对应）/标签帧总数
-    # 样本异常率 = ED = []或ES = []的数量/样本总数
+    Truth_label function's output is inputted as "result"
+    compute aFD precision recall error_distribution and sampleMissing rate
+    
+    """
     import math
     list_ed_normal = []
     list_es_normal = []
     list_ed_true = []
     list_es_true = []
-    ed_pred_all = 0
-    es_pred_all = 0
-    ed_true_all = 0
-    es_true_all = 0
-    ed_match = 0
-    es_match = 0
-    ed_normal = 0
-    es_normal = 0
-    ed_nomiss = 0
-    es_nomiss = 0
-    total_error_ed = 0
-    total_error_es = 0
+    # these definations are for statistic
+    ed_pred_all, es_pred_all,ed_true_all,es_true_all,ed_match,es_match,ed_normal,es_normal,ed_nomiss,es_nomiss= 0,0,0,0,0,0,0,0,0,0
+    total_error_ed,total_error_es = 0,0
     sample_missimg_num = 0
     a4cdDict = {}
     a4csDict = {}
@@ -58,7 +47,7 @@ def pingjiazhibiao(result):
         ed_true = true[0]
         es_true = true[1]
 
-        #删除可能的重复,防止多个pred帧对一个true帧
+        # avoid many to one
         ed_pred.sort()
         es_pred.sort()
         deleteAmong10frames(ed_pred)
@@ -72,7 +61,8 @@ def pingjiazhibiao(result):
                     total_error_ed += math.fabs(t - j)
                     a4cdDict[j-t]+=1
                     break
-
+            # all - normal = FP
+            # normal is TP
             a4cdDict[6] = ed_pred_all-ed_normal
 
         for j in es_pred:
@@ -97,15 +87,14 @@ def pingjiazhibiao(result):
                 if math.fabs(t - j) < 6:
                     es_nomiss += 1
                     break
-
+    # aFD precision recall 
     ed_result = total_error_ed / ed_normal,(ed_normal / ed_pred_all),(ed_nomiss / ed_true_all)
     es_result = total_error_es / es_normal,(es_normal / es_pred_all),(es_nomiss / es_true_all)
-    if ed_nomiss == ed_normal and es_nomiss == es_normal:
-        print("相等")
-    else:print("不相等")
     return ed_result,a4cdDict, es_result,a4csDict, sample_missimg_num / len(result)
 
 def test_model(path, m):
+    # import a case's echo images and return a images array.
+    # All of our echo sequences are not longer than 120.
     ndarray = np.ones(shape=(120, m, m, 1))
     i = 0
     getslisdir = os.listdir(path)
@@ -119,7 +108,6 @@ def test_model(path, m):
         array = cv2.resize(array, (m, m))
         ndarray[i] = array.reshape(m, m, 1)
         i += 1
-
     return ndarray[:i]
 
 
@@ -134,12 +122,13 @@ def get_frames(path, model, test_num, qiemian, m):
     D = delete_a4cd_frames(pred)
     S = delete_a4cs_frames(pred)
     Max = sliding_window(pred, D, 1)
-
     Min = sliding_window(pred, S, 0)
     return Max, Min
 
 
 def Truth_label(model, filepath, test_sample, labelpath, qiemian, m):
+    # import the label of ED and ES
+    # return a List composed of preds and its corresponding labels.
     import pandas
     label_csv = pandas.read_csv(labelpath)
     label_list = []
@@ -169,6 +158,7 @@ def Truth_label(model, filepath, test_sample, labelpath, qiemian, m):
 
 
 def meanAndSd(inputList):
+    # compute mean&standard
     s = 0
     mean = sum(inputList)/len(inputList)
     for i in range(len(inputList)):
