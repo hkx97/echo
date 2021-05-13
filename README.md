@@ -2,6 +2,7 @@
 ## A pipeline for automatically 2D echocardiography interpretion  
 ### 1.clone the code and then run run.py  
 ### 2.input the whole filepath. Such as D:\xx\xx\xx\filename.dicom
+### 3.you can use the example.dcm for a start. Just input "./example.dcm"  
 ![image](https://github.com/hkx97/echo/blob/main/assessment.png)
 
 ## envs:  
