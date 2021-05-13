@@ -184,19 +184,19 @@ def train():
     At last , the five experiments are completed. mean±sd will be considered.
     The accuracy and auc for binary-cls model will be computed.
     The metrics for ED and ES include precision, recall, aFD(equal to mae) will be computed respectively.
-    The sampleError will be computed if model has not worked on a certain one.  
+    The sampleError will be computed if model has not worked on some certain cases.  
     """
     # all result will be writed into a .txt file
     f = open("./result/"+str(train_config)+str(len(train_sample))+"eval_result.txt", "w", encoding="utf-8")
-    f.write(str(resultDict))
-    f.write("===================================")
-    f.write(str(edres))
-    f.write("===================================")
-    f.write(str(esres))  
-    f.write("===================================")
-    f.write(str(FPR_list))
-    f.write("===================================")
-    f.write(str(TPR_list))                     
+    f.write(str(resultDict)+"\n")
+    f.write("==================================="+"\n")
+    f.write(str(edres)+"\n")
+    f.write("==================================="+"\n")
+    f.write(str(esres)+"\n")  
+#     f.write("==================================="+"\n")
+#     f.write(str(FPR_list)+"\n")
+#     f.write("==================================="+"\n")
+#     f.write(str(TPR_list))                     
     f.close()
     print("Training process is done!")
 
