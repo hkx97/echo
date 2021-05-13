@@ -4,9 +4,10 @@ from tensorflow.keras.layers import *
 
 def load_model(input_size, load_weight=False, weight_path=None):
     """
+    input_size: we use 128. 256 or 64 is optional.
     if load_weight is True,please setting weight_path as well.
     """
-    def siamese_3dcnn_model(input_size):
+    def siamese_cnn_model(input_size):
         base = keras.Sequential([
             Conv2D(6, 3, input_shape=input_size,kernel_regularizer=keras.regularizers.l2(0.01)),
             BatchNormalization(),
@@ -48,7 +49,7 @@ def load_model(input_size, load_weight=False, weight_path=None):
         model = keras.Model(inputs=[left, right], outputs=fc)
 
         return model
-    Model = siamese_3dcnn_model((input_size, input_size, 1))
+    Model = siamese_cnn_model((input_size, input_size, 1))
 
     opt = keras.optimizers.Adam(lr=0.001)
     Model.compile(optimizer=opt,
