@@ -78,7 +78,7 @@ def train():
     such as: ED  ES  ED  ES   mark (indicate the first frame is ED or ES)
     No.1      5  25  50  75    0
     No.2         10  30  50    1
-    it is illustrated on a demo.csv file
+    it is illustrated on a example.csv file
     2.
     The dataset is stored as follows:
     ../Frames/Patientxxxx/axc/x.png
