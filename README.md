@@ -2,8 +2,8 @@
 ### 1.1.clone the code and then run run.py  
 ### 1.2.input the whole filepath. Such as D:\xx\xx\xx\filename.dicom
 ### 1.3.you can use the example.dcm for a start. Just input "./example.dcm" after run run.py. 
-![image](https://github.com/hkx97/echo/blob/main/assessment.png)
-
+![image](https://github.com/hkx97/echo/blob/main/assessment_a2c.png)  
+![image](https://github.com/hkx97/echo/blob/main/assessment_a4c.png)  
 # 2.Performing on your own datasets for training ED and ES identified model. 
 ### 2.1.Different cardiac views like a2c a4c plax psax and so on are accepted.
 ### 2.2.cd train dir and organize your own datasets and label as example description.
