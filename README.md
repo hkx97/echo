@@ -21,5 +21,5 @@
 ### 3.1.install anaconda python=3.7 from https://www.anaconda.com/  
 ### 3.2.conda create --name yourenvs python=3.7  ==> create a envs  
 ### 3.3.conda activate yourenvs then conda install some package as follows:  
-  #### 3.3.1 conda install tensorflow-gpu==2.0.0 python=3.7  
+  #### 3.3.1 conda install tensorflow-gpu==2.0.0 python=3.7  (cpu is also available)
   #### 3.3.2 pip install sklearn Augmentor pydicom imgaug pandas matplotlib h5py==2.10 opencv-python
