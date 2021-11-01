@@ -1,3 +1,0 @@
-nvidia-smi
-echo starting...
-python run.py
