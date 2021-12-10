@@ -21,18 +21,35 @@ from preprocess import interpretDicom
 from plot_tool import visualization
 import cv2
 import os
-
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 # 初始化模型
-EDESPredictionModel = load_Comparison_model.load_model(input_size=128, load_weight=True, weight_path="model_weight/a4c.hdf5") #  这里注意
-segEDModel = u_net.u_net((128, 128, 1), loadWeight=True, weigthPath="./model_weight/seg-a4c-trainbyed.hdf5")
-segESModel = u_net.u_net((128, 128, 1), loadWeight=True, weigthPath="./model_weight/seg-a4c-trainbyes.hdf5")
+EDESPredictionModel = load_Comparison_model.load_model(input_size=128, load_weight=True,\
+                                                       weight_path="model_weight/a4c.hdf5") #  这里注意
+segEDModel = u_net.u_net((128, 128, 1), loadWeight=True,\
+                         weigthPath="./model_weight/seg-a4c-trainbyed.hdf5")
+segESModel = u_net.u_net((128, 128, 1), loadWeight=True,\
+                         weigthPath="./model_weight/seg-a4c-trainbyes.hdf5")
 
 
 # 防止ED、ES为[]
 # 初始化数据
 while True:
     result1, result2 = {}, {}
-    data, originalFrames = interpretDicom.interpretDicom(128)  # 加载Dicom数据视频帧shape = （n，128，128，1）
+    print("please input a filepath，such as root/a/b/c/../1.dcm：")
+
+    while True:
+        src_path = input()
+        if src_path == "quit":
+            exit()
+        key = 0
+        try:
+            assert os.path.exists(src_path) == True, "path error!"
+        except Exception as ex:
+            print(ex, "please check it and try again or input quit！")
+            key = 1
+        if key == 0:
+            break
+    data, originalFrames = interpretDicom.interpretDicom(128,src_path)  # 加载Dicom数据视频帧shape = （n，128，128，1）
     modelOutTensor = EDESPredictionModel.predict([data[:-1], data[1:]])
     EDFrameNumber = sliding_window(modelOutTensor, delete_a4cd_frames(modelOutTensor), 1)  # return a List
     ESFrameNumber = sliding_window(modelOutTensor, delete_a4cs_frames(modelOutTensor), 0)
@@ -41,8 +58,9 @@ while True:
     maskES = segESModel.predict(data[ESFrameNumber[0]-1:ESFrameNumber[0]]).reshape(128, 128)
 
 
-    EDParameter = cardiac_parameter.cmpt_single_volum(maskED, scale=18)  # 注意scale
-    ESParameter = cardiac_parameter.cmpt_single_volum(maskES, scale=18)
+    scale = interpretDicom.parse_scale(src_path)
+    EDParameter = cardiac_parameter.cmpt_single_volum(maskED, scale=scale)  # 注意scale
+    ESParameter = cardiac_parameter.cmpt_single_volum(maskES, scale=scale)
     EF = (EDParameter[-1] - ESParameter[-1])/EDParameter[-1]
 
     parameterAll = EDFrameNumber[0:1]+list(EDParameter)+ESFrameNumber[0:1]+list(ESParameter)
@@ -70,6 +88,7 @@ while True:
     srcImg = visualization.putTextIntoImg(srcImg, result2, loc=700, EF=EF, k=1)
     #  plot the figure
     visualization.visualize(srcImg)
+
 
     print("Press y to continue, else quit！")
     ifContinue = input()

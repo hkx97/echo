@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HTML5上传图片并预览</title>
+    <link rel="icon" href="data:,">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}">
+    </script>
+</head>
+<body>
+<!--<h3>请选择图片文件：PNG/JPG/JPEG/SVG/GIF</h3>-->
+<div style="text-align: left;margin-left:500px;margin-top:100px;" >
+    <div style="float:left;">
+        <a href="javascript:;" class="file">
+            <input type="file" name="file" id="file0"><br>
+        </a>
+    </div>
+
+    <div style="float:left;margin-left:50px;margin-top:50px">
+        <input type="button" id="b0" onclick="upload_infer()" value="上传并预测">
+        <pre  id="out" style="width:320px;height:50px;line-height: 50px;margin-top:20px;"></pre>
+    </div>
+
+    <div id="img1" style="height:50%;width:50%;"></div>
+</div>
+
+<script type="text/javascript">
+
+        $('#upFileBtn').click(function () {
+            // var formFile = new FormData($('#uploadForm')[0])
+		     $.ajax({
+                url:"/load_ass",
+                type:"GET",
+                // data:formFile,
+                processData:false,
+                contentType:false,
+                success: function (data) {
+                    document.getElementById('img1').innerHTML=data
+                }
+             })
+        })
+
+
+
+
+    function upload_infer() {
+        var fileobj = $("#file0")[0].files[0];
+        console.log(fileobj);
+        var form = new FormData();
+        form.append("file00", fileobj); //向后台提交的表单，表单里就是图片信息
+        var out='';
+        var flower='';
+        $.ajax({
+            type: 'POST',
+            url: "upload_infer",
+            data: form,
+            async: false,       //同步执行
+            processData: false, // 告诉jquery要传输data对象
+            contentType: false, //告诉jquery不需要增加请求头对于contentType的设置
+            success: function (data) {
+                document.getElementById('img1').innerHTML=data
+        },error:function(){
+                console.log("后台处理错误");
+            }
+    });
+
+        // out.forEach(e=>{
+        //     flower+=`<div style="border-bottom: 1px solid #CCCCCC;line-height: 60px;font-size:16px;">${e}</div>`
+        // });
+        //
+        // document.getElementById("out").innerHTML=flower;
+
+    }
+
+
+    // function test() {
+    //     var fileobj = $("#file0")[0].files[0];
+    //     console.log(fileobj);
+    //     var form = new FormData();
+    //     form.append("file00", fileobj); //向后台提交的表单，表单里就是图片信息
+    //     var out='';
+    //     var flower='';
+    //     $.ajax({
+    //         type: 'POST',
+    //         url: "predict",
+    //         data: form,
+    //         async: false,       //同步执行
+    //         processData: false, // 告诉jquery要传输data对象
+    //         contentType: false, //告诉jquery不需要增加请求头对于contentType的设置
+    //         success: function (arg) {
+    //         console.log(arg)
+    //         out = arg.result;
+    //     },error:function(){
+    //             console.log("后台处理错误");
+    //         }
+    // });
+    //
+    //     out.forEach(e=>{
+    //         flower+=`<div style="border-bottom: 1px solid #CCCCCC;line-height: 60px;font-size:16px;">${e}</div>`
+    //     });
+    //
+    //     document.getElementById("out").innerHTML=flower;
+    //
+    // }
+
+</script>
+<style>
+    .file {
+        position: relative;
+        /*display: inline-block;*/
+        background: #CCC ;
+        border: 1px solid #CCC;
+        padding: 4px 4px;
+        overflow: hidden;
+        text-decoration: none;
+        text-indent: 0;
+        width:100px;
+        height:30px;
+        line-height: 30px;
+        border-radius: 5px;
+        color: #333;
+        font-size: 13px;
+
+    }
+    .file input {
+
+        text-decoration: none;
+
+        border: none;
+
+        padding: 12px 40px;
+
+        font-size: 16px;
+
+        background-color: green;
+
+        color: #fff;
+
+        border-radius: 5px;
+
+        box-shadow: 7px 6px 28px 1px rgba(0, 0, 0, 0.24);
+
+        cursor: pointer;
+
+        outline: none;
+
+        transition: 0.2s all;
+
+    }
+
+    /* 在按钮处于活动状态时添加转换 */
+
+
+
+    .file input :active {
+
+        transform: scale(0.98);
+
+        box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
+
+
+
+    }
+
+
+
+        #b0 {
+
+            text-decoration: none;
+
+            border: none;
+
+            padding: 12px 40px;
+
+            font-size: 16px;
+
+            background-color: green;
+
+            color: #fff;
+
+            border-radius: 5px;
+
+            box-shadow: 7px 6px 28px 1px rgba(0, 0, 0, 0.24);
+
+            cursor: pointer;
+
+            outline: none;
+
+            transition: 0.2s all;
+
+        }
+
+        /* 在按钮处于活动状态时添加转换 */
+
+
+
+        #b0:active {
+
+            transform: scale(0.98);
+
+            box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
+
+
+
+        }
+
+
+    /*.gradient{*/
+
+        /*filter:alpha(opacity=100 finishopacity=50 style=1 startx=0,starty=0,finishx=0,finishy=150) progid:DXImageTransform.Microsoft.gradient(startcolorstr=#fff,endcolorstr=#ccc,gradientType=0);*/
+        /*-ms-filter:alpha(opacity=100 finishopacity=50 style=1 startx=0,starty=0,finishx=0,finishy=150) progid:DXImageTransform.Microsoft.gradient(startcolorstr=#fff,endcolorstr=#ccc,gradientType=0);!*IE8*!*/
+        /*background:#1899FF; !* 一些不支持背景渐变的浏览器 *!*/
+        /*background:-moz-linear-gradient(top, #fff, #1899FF);*/
+        /*background:-webkit-gradient(linear, 0 0, 0 bottom, from(#fff), to(#ccc));*/
+        /*background:-o-linear-gradient(top, #fff, #ccc);*/
+    /*}*/
+</style>
+</body>
+</html>
+
+
