@@ -1,14 +1,13 @@
+import json
 from postprocess import cardiac_parameter
 from flask_caching import Cache
 from postprocess.postprocessing import *
-from model import load_Comparison_model
-from model import u_net
 from preprocess import interpretDicom, RGB2base64
 import os
 from flask import Flask, request, render_template
 # import base64
-from gevent import pywsgi
 import time
+from gevent import pywsgi
 import cv2
 from plot_tool import visualization
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
@@ -20,6 +19,8 @@ cache.init_app(app, config={'CACHE_TYPE': 'simple'})
 
 
 def load_model():
+    from model import load_Comparison_model
+    from model import u_net
     EDESPredictionModel = load_Comparison_model.load_model(input_size=128,
                                                            load_weight=True,
                                                            weight_path="model_weight/a4c.hdf5")  # 这里注意
@@ -28,6 +29,9 @@ def load_model():
     segESModel = u_net.u_net((128, 128, 1), loadWeight=True,
                              weigthPath="./model_weight/seg-a4c-trainbyes.hdf5")
     return EDESPredictionModel,segEDModel,segESModel
+
+
+EDESPredictionModel, segEDModel, segESModel = load_model()
 
 
 def save_infer_res(file_name,
@@ -43,39 +47,39 @@ def save_infer_res(file_name,
     try:
         cv2.imwrite("static/assessment/"+file_name, window*255)
     except:
-        print("save error")
-
+        print("save result_img error")
     return window*255
 
 
 def infer(file_name):
-    EDESPredictionModel, segEDModel, segESModel = load_model()
     src_path = "static/dicom_files/" + file_name
     data, originalFrames = interpretDicom.parse_dicom(128,src_path)
+    s_time = time.time()
     modelOutTensor = EDESPredictionModel.predict([data[:-1], data[1:]])
-    EDFrameNumber = sliding_window(modelOutTensor, delete_a4cd_frames(modelOutTensor), 1)  # return a List
-    ESFrameNumber = sliding_window(modelOutTensor, delete_a4cs_frames(modelOutTensor), 0)
+    EDFrameNumber = sliding_window(modelOutTensor,
+                                   delete_a4cd_frames(modelOutTensor), 1)  # return a List
+    ESFrameNumber = sliding_window(modelOutTensor,
+                                   delete_a4cs_frames(modelOutTensor), 0)
+    m_time = time.time()
+    print("ED\ES infer time usage {}".format(m_time-s_time))
+    f = open("log.txt","w")
+    f.write("ED\ES infer time usage {}".format(m_time-s_time))
     maskED = segEDModel.predict(data[EDFrameNumber[0]-1:EDFrameNumber[0]]).reshape(128, 128)  # 随机将第一帧作为ED，输出mask-->(1,128,128,1)
     maskES = segESModel.predict(data[ESFrameNumber[0]-1:ESFrameNumber[0]]).reshape(128, 128)
+    e_time = time.time()
+    print("segmentation infer time usage {}".format(e_time-m_time))
+    f.write("segmentation infer time usage {}".format(e_time-m_time))
     scale = interpretDicom.parse_scale(src_path)
-    EDParameter = cardiac_parameter.cmpt_single_volum(maskED, scale=scale)  # 注意scale
+    EDParameter = cardiac_parameter.cmpt_single_volum(maskED, scale=scale)  # 这里要优化时间，注意scale
     ESParameter = cardiac_parameter.cmpt_single_volum(maskES, scale=scale)
-    template = "{}:{:<15}{}:{}"
-    parameterNames1 = ["ED", "LV Length", "LV Area", "LV volume"]
-    parameterNames2 = ["ES", "LV Length", "LV Area", "LV volume"]
-    measurement = ["", "cm", "cm²", "ml"]
-    ED,ES = [EDFrameNumber],[ESFrameNumber]
-    ED+=list(EDParameter)
-    ES+=list(ESParameter)
-    result = []
-    for i,j in enumerate(parameterNames1):
-        result.append(template.format(parameterNames1[i],
-                                      str(ED[i])+measurement[i],
-                                      parameterNames2[i],
-                                      str(ES[i])+measurement[i]))
-    # print(result)
-
-
+    EF = (float(EDParameter[-1]) - float(ESParameter[-1])) / float(EDParameter[-1])
+    datalist = [("equipment","philip-ie33"),
+                ("view","A2C"),
+                ("frame",EDFrameNumber[0],ESFrameNumber[0]),
+                ("LV-length (cm)", EDParameter[0],ESParameter[0]),
+                ("LV-area (cm²)",EDParameter[1],ESParameter[1]),
+                ("LV-volume (ml)",EDParameter[2],ESParameter[2]),
+                ("EF (%)","%.2f" % (EF*100))]
     # save infer res on serve
     img = save_infer_res(file_name[:-4]+".png",
                    maskED,
@@ -83,16 +87,58 @@ def infer(file_name):
                    originalFrames,
                    EDFrameNumber,
                    ESFrameNumber)
-    data = RGB2base64.image_to_base64(img)  # 进行base64编码
-    html = '''<img src="data:image/png;base64,{}" style="width:100%;height:100%;"/>'''  # html代码
-    return html.format(data)
+    img_64 = RGB2base64.image_to_base64(img)  # 进行base64编码
+    return {"image":img_64,
+            "data":datalist}
 
-    # return {"result":result}
+
+@app.route('/line')
+def line():
+    # return render_template("score.html", scores=scores, num=num)
+    return render_template("line.html")
+
+
+@app.route('/idea')
+def idea():
+    # return render_template("score.html", scores=scores, num=num)
+    return render_template("idea.html")
+
+
+@app.route('/about')
+def about():
+    # return render_template("score.html", scores=scores, num=num)
+    return render_template("about.html")
+
+
+@app.route('/pic',methods=["POST","GET"])
+def pic():
+    try:
+        data = json.loads(request.get_data(as_text=True))
+        content = data["data"]
+    except:
+        return render_template("pic.html",pic_= None)
+    return render_template("pic.html", pic_=content)
+
+
+@app.route('/table',methods=["POST","GET"])
+def table():
+    try:
+        data = json.loads(request.get_data(as_text=True))
+        content = data["data"]
+    except:
+        return render_template("table.html",tables=[["暂未上传","",""]])
+    return render_template("table.html", tables=content)
+
+
+@app.route('/index')
+def home():
+    return root()
 
 
 @app.route("/upload_infer",methods=["POST"])
-@cache.cached(timeout=30)
+# @cache.cached(timeout=100)
 def save_infer():
+    import time
     file = request.files["file00"]
     path = "static/dicom_files"
     if not os.path.exists(path):
@@ -106,23 +152,12 @@ def save_infer():
         return {"result":["上传失败，请重试"]}
 
 
-# @app.route('/load_ass', methods=['GET', 'POST'])  # 接受并存储文件
-# def load_ass():
-#     if request.method == "GET":
-#         img = open("static/assessment/"+GLOBAL_FILE_NAME[:-4]+".png", 'rb')  # 读取图片文件
-#         data = base64.b64encode(img.read()).decode()  # 进行base64编码
-#         html = '''<img src="data:image/png;base64,{}" style="width:100%;height:100%;"/>'''  # html代码
-#         return html.format(data)
-
-
 @app.route("/",methods=["GET","POST"])
 def root():
-    return render_template("up.html")
+    return render_template("index.html")
 
 
 if __name__ == "__main__":
-    # app.run(host="0.0.0.0",port=5000,processes=True)
-
-    # app.run()
+    # app.run(host="0.0.0.0",port=5000,threaded=True)
     server = pywsgi.WSGIServer(('0.0.0.0',5000,),app)
     server.serve_forever()

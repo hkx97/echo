@@ -8,6 +8,11 @@
     </script>
 </head>
 <body>
+
+    <span style="font-family:SimSun;font-size:18px;"><body>
+        <a href="/table" class="a_post">提交</a>
+    </body></span>
+
 <!--<h3>请选择图片文件：PNG/JPG/JPEG/SVG/GIF</h3>-->
 <div style="text-align: left;margin-left:500px;margin-top:100px;" >
     <div style="float:left;">
@@ -25,6 +30,22 @@
 </div>
 
 <script type="text/javascript">
+    $(".a_post").on("click",function(event){
+                event.preventDefault();  // 使a自带的方法失效，即无法向addStudent.action发出请求
+                $.ajax({
+                    type: "POST",  // 使用post方式
+                    url: "table",
+                    contentType:"application/json",
+                    data: JSON.stringify({"param1":"value1", "param2":"value2"}),  // 参数列表，stringify()方法用于将JS对象序列化为json字符串
+                    dataType:"json",
+                    success: function(result){
+                       // 请求成功后的操作
+                    },
+                    error: function(result){
+                       // 请求失败后的操作
+                    }
+                });
+        });
 
         $('#upFileBtn').click(function () {
             // var formFile = new FormData($('#uploadForm')[0])
