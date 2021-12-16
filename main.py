@@ -7,10 +7,23 @@ import os
 from flask import Flask, request, render_template
 # import base64
 import time
+from model import load_Comparison_model
+from model import u_net
 from gevent import pywsgi
 import cv2
 from plot_tool import visualization
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
+
+WEIGHT_PATH_DICT = \
+{"A4C":
+["model_weight/a4c.hdf5",
+"model_weight/seg-a4c-trainbyed.hdf5",
+"model_weight/seg-a4c-trainbyes.hdf5"],
+"A2C":
+["model_weight/a2c.hdf5",
+"model_weight/seg-a2c-trainbyed.hdf5",
+"model_weight/seg-a2c-trainbyes.hdf5"]}
 
 
 app = Flask(__name__)
@@ -18,20 +31,21 @@ cache = Cache()
 cache.init_app(app, config={'CACHE_TYPE': 'simple'})
 
 
-def load_model():
-    from model import load_Comparison_model
-    from model import u_net
+def load_model(cardiac_view):
+    weight_list = WEIGHT_PATH_DICT[cardiac_view]  #A2C A4C
+    print(weight_list)
     EDESPredictionModel = load_Comparison_model.load_model(input_size=128,
                                                            load_weight=True,
-                                                           weight_path="model_weight/a4c.hdf5")  # 这里注意
+                                                           weight_path=weight_list[0])  # 这里注意
     segEDModel = u_net.u_net((128, 128, 1), loadWeight=True,
-                             weigthPath="./model_weight/seg-a4c-trainbyed.hdf5")
+                             weigthPath=weight_list[1])
     segESModel = u_net.u_net((128, 128, 1), loadWeight=True,
-                             weigthPath="./model_weight/seg-a4c-trainbyes.hdf5")
+                             weigthPath=weight_list[2])
     return EDESPredictionModel,segEDModel,segESModel
 
 
-EDESPredictionModel, segEDModel, segESModel = load_model()
+model_list = load_model("A4C")
+model_list_ = load_model("A4C")
 
 
 def save_infer_res(file_name,
@@ -51,45 +65,93 @@ def save_infer_res(file_name,
     return window*255
 
 
-def infer(file_name):
-    src_path = "static/dicom_files/" + file_name
-    data, originalFrames = interpretDicom.parse_dicom(128,src_path)
+def nn_infer(data, model_list):
     s_time = time.time()
-    modelOutTensor = EDESPredictionModel.predict([data[:-1], data[1:]])
+    modelOutTensor = model_list[0].predict([data[:-1], data[1:]])
     EDFrameNumber = sliding_window(modelOutTensor,
                                    delete_a4cd_frames(modelOutTensor), 1)  # return a List
     ESFrameNumber = sliding_window(modelOutTensor,
                                    delete_a4cs_frames(modelOutTensor), 0)
     m_time = time.time()
-    print("ED\ES infer time usage {}".format(m_time-s_time))
-    f = open("log.txt","w")
-    f.write("ED\ES infer time usage {}".format(m_time-s_time))
-    maskED = segEDModel.predict(data[EDFrameNumber[0]-1:EDFrameNumber[0]]).reshape(128, 128)  # 随机将第一帧作为ED，输出mask-->(1,128,128,1)
-    maskES = segESModel.predict(data[ESFrameNumber[0]-1:ESFrameNumber[0]]).reshape(128, 128)
+    print("ED\ES infer time usage {}".format(m_time - s_time))
+    f = open("log.txt", "w")
+    f.write("ED\ES infer time usage {}".format(m_time - s_time))
+    maskED = model_list[1].predict(data[EDFrameNumber[0] - 1:EDFrameNumber[0]]).reshape(128, 128)  # 随机将第一帧作为ED，输出mask-->(1,128,128,1)
+    maskES = model_list[2].predict(data[ESFrameNumber[0] - 1:ESFrameNumber[0]]).reshape(128, 128)
     e_time = time.time()
-    print("segmentation infer time usage {}".format(e_time-m_time))
-    f.write("segmentation infer time usage {}".format(e_time-m_time))
+    print("segmentation infer time usage {}".format(e_time - m_time))
+    f.write("segmentation infer time usage {}".format(e_time - m_time))
+    return EDFrameNumber, ESFrameNumber, maskED, maskES
+
+
+def infer(*args):
+    src_path = "static/dicom_files/" + args[0]
+    data, originalFrames = interpretDicom.parse_dicom(128, src_path)
+    EDFrameNumber, ESFrameNumber, maskED, maskES = nn_infer(data, model_list = model_list)
     scale = interpretDicom.parse_scale(src_path)
     EDParameter = cardiac_parameter.cmpt_single_volum(maskED, scale=scale)  # 这里要优化时间，注意scale
     ESParameter = cardiac_parameter.cmpt_single_volum(maskES, scale=scale)
     EF = (float(EDParameter[-1]) - float(ESParameter[-1])) / float(EDParameter[-1])
-    datalist = [("equipment","philip-ie33"),
-                ("view","A2C"),
-                ("frame",EDFrameNumber[0],ESFrameNumber[0]),
-                ("LV-length (cm)", EDParameter[0],ESParameter[0]),
-                ("LV-area (cm²)",EDParameter[1],ESParameter[1]),
-                ("LV-volume (ml)",EDParameter[2],ESParameter[2]),
-                ("EF (%)","%.2f" % (EF*100))]
+    datalist = [("equipment", "philip-ie33"),
+                ("view", "none"),
+                ("frame", EDFrameNumber[0], ESFrameNumber[0]),
+                ("LV-length (cm)", EDParameter[0], ESParameter[0]),
+                ("LV-area (cm²)", EDParameter[1], ESParameter[1]),
+                ("LV-volume (ml)", EDParameter[2], ESParameter[2]),
+                ("EF (%)", "%.2f" % (EF * 100))]
     # save infer res on serve
-    img = save_infer_res(file_name[:-4]+".png",
-                   maskED,
-                   maskES,
-                   originalFrames,
-                   EDFrameNumber,
-                   ESFrameNumber)
+    img = save_infer_res(args[0][:-4] + ".png",
+                         maskED,
+                         maskES,
+                         originalFrames,
+                         EDFrameNumber,
+                         ESFrameNumber)
     img_64 = RGB2base64.image_to_base64(img)  # 进行base64编码
-    return {"image":img_64,
-            "data":datalist}
+    try:
+        assert len(args) == 2;
+        src_path_ = "static/dicom_files/" + args[1]
+        data_, originalFrames_ = interpretDicom.parse_dicom(128, src_path_)
+        EDFrameNumber_, ESFrameNumber_, maskED_, maskES_ = nn_infer(data_, model_list = model_list_)
+        scale_ = interpretDicom.parse_scale(src_path_)
+        EDParameter_ = cardiac_parameter.cmpt_single_volum(maskED_, scale=scale_)  # 这里要优化时间，注意scale
+        ESParameter_ = cardiac_parameter.cmpt_single_volum(maskES_, scale=scale_)
+        EF_ = (float(EDParameter_[-1]) - float(ESParameter_[-1])) / float(EDParameter_[-1])
+
+        # save infer res on serve
+        img_ = save_infer_res(args[1][:-4] + ".png",
+                             maskED_,
+                             maskES_,
+                             originalFrames_,
+                             EDFrameNumber_,
+                             ESFrameNumber_)
+        img_64_ = RGB2base64.image_to_base64(img_)  # 进行base64编码
+
+        # simpson
+        EDV_simpson = cardiac_parameter.cmpt_simpson(pred_1=maskED,
+                                             pred_2=maskED_,
+                                             scale=scale)
+        ESV_simpson = cardiac_parameter.cmpt_simpson(pred_1=maskES,
+                                             pred_2=maskES_,
+                                             scale=scale)
+        EF_simpson = (float(EDV_simpson)-float(ESV_simpson)) / float(EDV_simpson)
+
+        datalist_merge =[("equipment", "philip-ie33"),
+                        ("view", "A2C","","A4C"),
+                        ("frame", EDFrameNumber[0], ESFrameNumber[0],EDFrameNumber_[0], ESFrameNumber_[0]),
+                        ("LV-length (cm)", EDParameter[0], ESParameter[0],EDParameter_[0],ESParameter_[0]),
+                        ("LV-area (cm²)", EDParameter[1], ESParameter[1],EDParameter_[1], ESParameter_[1]),
+                        ("LV-volume (ml)", EDParameter[2], ESParameter[2],EDParameter_[2], ESParameter_[2]),
+                        ("EF (%)", "%.2f" % (EF * 100) , "" , "%.2f" % (EF_ * 100)),
+                        ("Simpson measurement", "","","",""),
+                        ("LV-volume(simpson,ml)", EDV_simpson),
+                        ("LV-volume(simpson,ml)", ESV_simpson),
+                        ("EF (simpson(%))", "%.2f" % (EF_simpson*100))
+                        ]
+
+        return (img_64 , img_64_), datalist_merge
+
+    except:
+        return img_64, datalist
 
 
 @app.route('/line')
@@ -117,7 +179,11 @@ def pic():
         content = data["data"]
     except:
         return render_template("pic.html",pic_= None)
-    return render_template("pic.html", pic_=content)
+    try:
+        assert len(content) == 2;
+        return render_template("pic_simpson.html", pic_=content[0], pic_1=content[1])
+    except:
+        return render_template("pic.html", pic_=content)
 
 
 @app.route('/table',methods=["POST","GET"])
@@ -127,7 +193,11 @@ def table():
         content = data["data"]
     except:
         return render_template("table.html",tables=[["暂未上传","",""]])
-    return render_template("table.html", tables=content)
+    try:
+        assert len(content) == 11;
+        return render_template("table_simpson.html", tables=content)
+    except:
+        return render_template("table.html", tables=content)
 
 
 @app.route('/index')
@@ -139,17 +209,21 @@ def home():
 # @cache.cached(timeout=100)
 def save_infer():
     import time
-    file = request.files["file00"]
     path = "static/dicom_files"
     if not os.path.exists(path):
         os.mkdir(path)
+    file0 = request.files["file00"]
+    FILE_NAME_0 = str(time.time()) + file0.filename  # random generate
+    file0.save(os.path.join(path, FILE_NAME_0))
     try:
-        global GLOBAL_FILE_NAME
-        GLOBAL_FILE_NAME = str(time.time())+file.filename
-        file.save(os.path.join(path,GLOBAL_FILE_NAME))
-        return infer(GLOBAL_FILE_NAME)
+        file1 = request.files["file01"]
+        FILE_NAME_1 = str(time.time()) + file1.filename
+        file1.save(os.path.join(path, FILE_NAME_1))
+        infer_res = infer(FILE_NAME_0, FILE_NAME_1)
     except:
-        return {"result":["上传失败，请重试"]}
+        infer_res = infer(FILE_NAME_0)
+    return {"image":infer_res[0],
+            "data":infer_res[1]}
 
 
 @app.route("/",methods=["GET","POST"])

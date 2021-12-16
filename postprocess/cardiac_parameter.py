@@ -34,7 +34,7 @@ def get_local(pred):  # 输入mask， 获得mask的上下边界
     return local[0], local[-1]
 
 
-def cmpt_simpson(pred_1, pred_2, r_cm):  # 返回辛普森方法计算的体积 r_cm==scale
+def cmpt_simpson(pred_1, pred_2, scale):  # 返回辛普森方法计算的体积 r_cm==scale
     # normalization
     """
     灰度值阈值选取为0.2，if>0.2-->1
@@ -66,6 +66,6 @@ def cmpt_simpson(pred_1, pred_2, r_cm):  # 返回辛普森方法计算的体积 
         areai = np.pi * .25 * ai * bi  # 椭圆计算公式
         volum += areai  # 体积等于总的像素数
     # pixels ---> ml
-    return volum * 64 * (r_cm / 460) ** 3  # 像素和ml的转化
+    return "%.2f" %(volum * 64 * scale ** 3)  # 像素和ml的转化 512/128=4
 
 

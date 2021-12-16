@@ -95,6 +95,7 @@
         };
 
 
+
     function upload_infer() {
       var detail_div = document.getElementById("detail");
       var input_area = document.getElementById("input");
@@ -103,27 +104,26 @@
       var pic_area = document.getElementById("visual");
       var export_area = document.getElementById("export");
       var load_area = document.getElementById("loading-center-absolute");
-
-      var file_obj = $("#file0")[0].files[0];
-      console.log(file_obj)
-     if(typeof(file_obj) == 'undefined'){
+      // console.log($("#file0")[0].files[1])
+      var file0_obj = $("#file0")[0].files[0];
+      var file1_obj = $("#file0")[0].files[1]; //如果单视角，则undefined
+      // console.log(file_obj)
+     if(typeof(file0_obj) == 'undefined'){
         alert("请先点击上传文件！")
      }else{
             load_area.style.display = "";
             input_area.style.display = "none";
      }
 
-
-
-
-
       var form = new FormData();
-      form.append("file00", file_obj); //向后台提交的表单，表单里就是图片信息
+      form.append("file00", file0_obj); //向后台提交的表单，表单里就是图片信息
+      form.append("file01", file1_obj);
+      console.log(form)
       $.ajax({
           type: 'POST',
           url: "upload_infer",
           data: form,
-          async: true,       //同步执行
+          async: true,       //异步执行
           processData: false, // 告诉jquery要传输data对象
           contentType: false, //告诉jquery不需要增加请求头对于contentType的设置
           // beforeSend: function(){
@@ -140,7 +140,7 @@
               export_area.style.display = "";
       },error:function(){
              // alert("上传为空！")
-              console.log("后台处理错误");
+              console.log("post错误");
           }
       });}
   </script>
@@ -260,7 +260,7 @@
 
       <div id="input" >
         <div >
-          <input class="clip"  style="margin-left:25%; margin-top:20px" type="file" id="file0">
+          <input class="clip"  style="margin-left:25%; margin-top:20px" type="file" id="file0" multiple>
           <label for="file0" class="button">选择文件</label>
                 <style>
                 .clip{

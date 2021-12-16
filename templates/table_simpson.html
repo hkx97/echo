@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>左心室分割结果</title>
+  <title>左心室量化结果</title>
   <meta content="" name="descriptison">
   <meta content="" name="keywords">
 
@@ -53,85 +53,55 @@
     </div>
   </header><!-- End Header -->
 
-  <!-- ======= Our Team Section ======= -->
-  <section id="team" class="team">
+   <!-- ======= table Section ======= -->
+   <section id="table" class="table">
       <div class="container">
 
         <div class="section-title">
-          <h2>可视化结果</h2>
-          <p>支持常见心脏彩超视角包括A2C、A4C的左心室实例分割</p>
+          <h2>左心室量化结果</h2>
         </div>
 
-        <div class="row">
+        <!-- ======= Counts Section ======= -->
+        <section class="counts section-bg">
+      <div class="container">
 
-          <div class="" data-aos="fade-up">
-            <div class="member">
-              <div class="pic"><img src="data:image/png;base64,{{pic_}}" style="width:100%;height:100%;"/></div>
-<!--               <div class="member-info">
-                <h4>Walter White</h4>
-                <span>Chief Executive Officer</span>
-                <div class="social">
-                  <a href=""><i class="icofont-twitter"></i></a>
-                  <a href=""><i class="icofont-facebook"></i></a>
-                  <a href=""><i class="icofont-instagram"></i></a>
-                  <a href=""><i class="icofont-linkedin"></i></a>
-                </div>
-              </div> -->
-            </div>
-          </div>
+        <table class="table table-striped">
 
-         <!--  <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
-            <div class="member">
-              <div class="pic"><img src="static/assets/img/team/team-2.jpg" class="img-fluid" alt=""></div>
-              <div class="member-info">
-                <h4>Sarah Jhonson</h4>
-                <span>Product Manager</span>
-                <div class="social">
-                  <a href=""><i class="icofont-twitter"></i></a>
-                  <a href=""><i class="icofont-facebook"></i></a>
-                  <a href=""><i class="icofont-instagram"></i></a>
-                  <a href=""><i class="icofont-linkedin"></i></a>
-                </div>
-              </div>
-            </div>
-          </div>
+            <tr>
+                <td></td>
+                <td>ED</td>
+                <td>ES</td>
+                <td>ED</td>
+                <td>ES</td>
+            </tr>
 
-          <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
-            <div class="member">
-              <div class="pic"><img src="static/assets/img/team/team-3.jpg" class="img-fluid" alt=""></div>
-              <div class="member-info">
-                <h4>William Anderson</h4>
-                <span>CTO</span>
-                <div class="social">
-                  <a href=""><i class="icofont-twitter"></i></a>
-                  <a href=""><i class="icofont-facebook"></i></a>
-                  <a href=""><i class="icofont-instagram"></i></a>
-                  <a href=""><i class="icofont-linkedin"></i></a>
-                </div>
-              </div>
-            </div>
-          </div>
+            {% for table in tables %}
+            <tr>
+                <td>
+                    {{table[0]}}
+                </td>
+                <td>
+                    {{table[1]}}
+                </td>
+                <td>
+                    {{table[2]}}
+                </td>
+                <td>
+                    {{table[3]}}
+                </td>
+                <td>
+                    {{table[4]}}
+                </td>
+            </tr>
+            {% endfor %}
 
-          <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
-            <div class="member">
-              <div class="pic"><img src="static/assets/img/team/team-4.jpg" class="img-fluid" alt=""></div>
-              <div class="member-info">
-                <h4>Amanda Jepson</h4>
-                <span>Accountant</span>
-                <div class="social">
-                  <a href=""><i class="icofont-twitter"></i></a>
-                  <a href=""><i class="icofont-facebook"></i></a>
-                  <a href=""><i class="icofont-instagram"></i></a>
-                  <a href=""><i class="icofont-linkedin"></i></a>
-                </div>
-              </div>
-            </div>
-          </div> -->
-
-        </div>
+        </table>
 
       </div>
-    </section><!-- End Our Team Section -->
+    </section><!-- End Counts Section -->
+
+      </div>
+   </section><!-- End table Section -->
 
   <!-- ======= Footer ======= -->
   <footer id="footer">
@@ -139,6 +109,7 @@
       <div class="copyright">
         &copy; Copyright <strong><span>Echoo</span></strong>. All Rights Reserved
       </div>
+    
     </div>
   </footer><!-- End Footer -->
 
@@ -148,7 +119,6 @@
   <script src="static/assets/vendor/jquery/jquery.min.js"></script>
   <script src="static/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="static/assets/vendor/jquery.easing/jquery.easing.min.js"></script>
-
   <script src="static/assets/vendor/jquery-sticky/jquery.sticky.js"></script>
   <script src="static/assets/vendor/venobox/venobox.min.js"></script>
   <script src="static/assets/vendor/waypoints/jquery.waypoints.min.js"></script>
@@ -162,3 +132,5 @@
 </body>
 
 </html>
+
+
