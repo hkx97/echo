@@ -108,9 +108,25 @@
       var file0_obj = $("#file0")[0].files[0];
       var file1_obj = $("#file0")[0].files[1]; //如果单视角，则undefined
       // console.log(file_obj)
-     if(typeof(file0_obj) == 'undefined'){
-        alert("请先点击上传文件！")
-     }else{
+      //   if($("#file0")[0].files[2] != 'undefined'){
+      //       alert("文件数目为空或大于2")
+      //       Location.replace()
+      //   }
+
+    console.log($("#file0")[0].files.length)
+
+     if($("#file0")[0].files.length==0){
+            alert("请先点击上传文件！")
+            location.reload()
+            return false}
+
+
+     else if($("#file0")[0].files.length>2){
+            alert("文件数目大于2")
+            location.reload()
+            return false
+         }
+     else{
             load_area.style.display = "";
             input_area.style.display = "none";
      }
@@ -139,8 +155,10 @@
               pic_area.style.display = "";
               export_area.style.display = "";
       },error:function(){
-             // alert("上传为空！")
-              console.log("post错误");
+              alert("后台处理错误，请检查数据类型（成像质量较差、时长过短可能导致处理失败）")
+              location.reload()
+
+              console.log("后台处理错误");
           }
       });}
   </script>

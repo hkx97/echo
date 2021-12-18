@@ -1,1 +1,1 @@
-ED\ES infer time usage 0.3845524787902832segmentation infer time usage 0.17570829391479492
+ED\ES infer time usage 0.45114660263061523segmentation infer time usage 0.1639080047607422

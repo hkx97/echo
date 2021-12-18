@@ -4,17 +4,22 @@ from flask_caching import Cache
 from postprocess.postprocessing import *
 from preprocess import interpretDicom, RGB2base64
 import os
+import numpy as np
 from flask import Flask, request, render_template
-# import base64
+from postprocess.cls_view import view_classification
 import time
+import torch
 from model import load_Comparison_model
 from model import u_net
 from gevent import pywsgi
 import cv2
+from model.mobilenet import MobileNetV2
+from torchvision import transforms
 from plot_tool import visualization
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 
+device = torch.device("cpu")
 WEIGHT_PATH_DICT = \
 {"A4C":
 ["model_weight/a4c.hdf5",
@@ -23,7 +28,9 @@ WEIGHT_PATH_DICT = \
 "A2C":
 ["model_weight/a2c.hdf5",
 "model_weight/seg-a2c-trainbyed.hdf5",
-"model_weight/seg-a2c-trainbyes.hdf5"]}
+"model_weight/seg-a2c-trainbyes.hdf5"],
+ "MobileNet":
+"model_weight/MobileNetV2.pth"}
 
 
 app = Flask(__name__)
@@ -33,7 +40,6 @@ cache.init_app(app, config={'CACHE_TYPE': 'simple'})
 
 def load_model(cardiac_view):
     weight_list = WEIGHT_PATH_DICT[cardiac_view]  #A2C A4C
-    print(weight_list)
     EDESPredictionModel = load_Comparison_model.load_model(input_size=128,
                                                            load_weight=True,
                                                            weight_path=weight_list[0])  # 这里注意
@@ -41,10 +47,15 @@ def load_model(cardiac_view):
                              weigthPath=weight_list[1])
     segESModel = u_net.u_net((128, 128, 1), loadWeight=True,
                              weigthPath=weight_list[2])
-    return EDESPredictionModel,segEDModel,segESModel
+
+    mobilenet_model = MobileNetV2(num_classes=2).to(device)
+    # load mobilenet_model weights
+    mobilenet_model.load_state_dict(torch.load(WEIGHT_PATH_DICT["MobileNet"], map_location=device))
+    mobilenet_model.eval()
+    return EDESPredictionModel,segEDModel,segESModel, mobilenet_model
 
 
-model_list = load_model("A4C")
+model_list = load_model("A2C")
 model_list_ = load_model("A4C")
 
 
@@ -87,13 +98,22 @@ def nn_infer(data, model_list):
 def infer(*args):
     src_path = "static/dicom_files/" + args[0]
     data, originalFrames = interpretDicom.parse_dicom(128, src_path)
-    EDFrameNumber, ESFrameNumber, maskED, maskES = nn_infer(data, model_list = model_list)
+    # 获取视角 随便判断一帧或几帧
+    view_list = []
+    for _ in 0,-1 ,len(originalFrames)//2: # 随机取三帧
+        pil_image = transforms.ToPILImage()((originalFrames[_]*255).astype(np.uint8))
+        view = view_classification(pil_image, model_list[-1])
+        view_list.append(view)
+    print(view_list)
+    view_ = max(view_list, key=view_list.count)
+    model_list_choice = model_list if view_ == "A2C" else model_list_
+    EDFrameNumber, ESFrameNumber, maskED, maskES = nn_infer(data, model_list = model_list_choice)
     scale = interpretDicom.parse_scale(src_path)
     EDParameter = cardiac_parameter.cmpt_single_volum(maskED, scale=scale)  # 这里要优化时间，注意scale
     ESParameter = cardiac_parameter.cmpt_single_volum(maskES, scale=scale)
     EF = (float(EDParameter[-1]) - float(ESParameter[-1])) / float(EDParameter[-1])
     datalist = [("equipment", "philip-ie33"),
-                ("view", "none"),
+                ("view", view_),
                 ("frame", EDFrameNumber[0], ESFrameNumber[0]),
                 ("LV-length (cm)", EDParameter[0], ESParameter[0]),
                 ("LV-area (cm²)", EDParameter[1], ESParameter[1]),
@@ -111,7 +131,18 @@ def infer(*args):
         assert len(args) == 2;
         src_path_ = "static/dicom_files/" + args[1]
         data_, originalFrames_ = interpretDicom.parse_dicom(128, src_path_)
-        EDFrameNumber_, ESFrameNumber_, maskED_, maskES_ = nn_infer(data_, model_list = model_list_)
+        view_list = []
+        for _ in 0, -1, len(originalFrames_) // 2:  # 随机取三帧
+            pil_image = transforms.ToPILImage()((originalFrames_[_] * 255).astype(np.uint8))
+            view = view_classification(pil_image, model_list[-1])
+            view_list.append(view)
+        print(view_list)
+        view_1 = max(view_list, key=view_list.count)
+        model_list_choice = model_list if view_1 == "A2C" else model_list_
+        EDFrameNumber_, ESFrameNumber_, maskED_, maskES_ = nn_infer(data_, model_list = model_list_choice)
+        if view_1 == view_:
+            print("视角判断相同")
+            # raise ValueError
         scale_ = interpretDicom.parse_scale(src_path_)
         EDParameter_ = cardiac_parameter.cmpt_single_volum(maskED_, scale=scale_)  # 这里要优化时间，注意scale
         ESParameter_ = cardiac_parameter.cmpt_single_volum(maskES_, scale=scale_)
@@ -136,7 +167,7 @@ def infer(*args):
         EF_simpson = (float(EDV_simpson)-float(ESV_simpson)) / float(EDV_simpson)
 
         datalist_merge =[("equipment", "philip-ie33"),
-                        ("view", "A2C","","A4C"),
+                        ("view", view_,"",view_1),
                         ("frame", EDFrameNumber[0], ESFrameNumber[0],EDFrameNumber_[0], ESFrameNumber_[0]),
                         ("LV-length (cm)", EDParameter[0], ESParameter[0],EDParameter_[0],ESParameter_[0]),
                         ("LV-area (cm²)", EDParameter[1], ESParameter[1],EDParameter_[1], ESParameter_[1]),
