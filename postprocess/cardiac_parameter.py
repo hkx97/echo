@@ -26,6 +26,13 @@ def cmpt_single_volum(inputs,scale):  # 计算单独一帧（ED、ES）的长度
     return "%.2f" %length,"%.2f" %area,"%.2f" %volum
 
 
+def cmpt_single_volum_(inputs,scale):  # 计算单独一帧（ED、ES）的长度cm、面积cm2、体积ml scale是刻度比例for run.py
+    area = cmpt_area(inputs)*16*(scale**2)
+    length = (get_local(inputs)[1]-get_local(inputs)[0])*.97*4*scale
+    volum = (8*area**2)/(3*np.pi*length)
+    return length,area,volum
+
+
 def get_local(pred):  # 输入mask， 获得mask的上下边界
     local = []
     for x in range(128):

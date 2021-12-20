@@ -59,8 +59,8 @@ while True:
 
 
     scale = interpretDicom.parse_scale(src_path)
-    EDParameter = cardiac_parameter.cmpt_single_volum(maskED, scale=scale)  # 注意scale
-    ESParameter = cardiac_parameter.cmpt_single_volum(maskES, scale=scale)
+    EDParameter = cardiac_parameter.cmpt_single_volum_(maskED, scale=scale)  # 注意scale
+    ESParameter = cardiac_parameter.cmpt_single_volum_(maskES, scale=scale)
     EF = (EDParameter[-1] - ESParameter[-1])/EDParameter[-1]
 
     parameterAll = EDFrameNumber[0:1]+list(EDParameter)+ESFrameNumber[0:1]+list(ESParameter)
