@@ -14,11 +14,22 @@ from tensorflow.keras import preprocessing
 def parse_scale(path):
     # 解析像素和cm的转换比例
     file = pydicom.read_file(path)
-    info = file.SequenceOfUltrasoundRegions
-    x_delta = info[0]["PhysicalDeltaX"].value
-    y_delta = info[0]["PhysicalDeltaY"].value
-    assert x_delta == y_delta, print("scale of x:{} is not equal to y:{}".format(x_delta, y_delta))
-    return x_delta
+    try:
+        Manufacturer = file["Manufacturer"].value
+    except:
+        Manufacturer = None
+    try:
+        SoftwareVersions = file["SoftwareVersions"].value
+    except:
+        SoftwareVersions = None
+    try:
+        info = file.SequenceOfUltrasoundRegions
+        x_delta = info[0]["PhysicalDeltaX"].value
+        y_delta = info[0]["PhysicalDeltaY"].value
+        assert x_delta == y_delta, print("scale of x:{} is not equal to y:{}".format(x_delta, y_delta))
+    except:
+        x_delta = 18/460 #默认18/460
+    return x_delta, Manufacturer, SoftwareVersions
 
 
 def interpretDicom(m,src_path):

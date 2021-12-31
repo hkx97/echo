@@ -96,7 +96,18 @@ def nn_infer(data, model_list):
 
 
 def infer(*args):
+    type_error = False
     src_path = "static/dicom_files/" + args[0]
+    try:
+        src_path_ = "static/dicom_files/" + args[1]
+        try:
+            data_, originalFrames_ = interpretDicom.parse_dicom(128, src_path_)
+        except:
+            type_error = True
+            raise TypeError
+    except:
+        if type_error:
+            return
     data, originalFrames = interpretDicom.parse_dicom(128, src_path)
     # 获取视角 随便判断一帧或几帧
     view_list = []
@@ -108,11 +119,12 @@ def infer(*args):
     view_ = max(view_list, key=view_list.count)
     model_list_choice = model_list if view_ == "A2C" else model_list_
     EDFrameNumber, ESFrameNumber, maskED, maskES = nn_infer(data, model_list = model_list_choice)
-    scale = interpretDicom.parse_scale(src_path)
+    scale, Manufacturer, SoftwareVersions = interpretDicom.parse_scale(src_path)
     EDParameter = cardiac_parameter.cmpt_single_volum(maskED, scale=scale)  # 这里要优化时间，注意scale
     ESParameter = cardiac_parameter.cmpt_single_volum(maskES, scale=scale)
     EF = (float(EDParameter[-1]) - float(ESParameter[-1])) / float(EDParameter[-1])
-    datalist = [("equipment", "philip-ie33"),
+    datalist = [("Manufacturer", Manufacturer),
+                ("Software Versions", SoftwareVersions),
                 ("view", view_),
                 ("frame", EDFrameNumber[0], ESFrameNumber[0]),
                 ("LV-length (cm)", EDParameter[0], ESParameter[0]),
@@ -128,9 +140,7 @@ def infer(*args):
                          ESFrameNumber)
     img_64 = RGB2base64.image_to_base64(img)  # 进行base64编码
     try:
-        assert len(args) == 2;
-        src_path_ = "static/dicom_files/" + args[1]
-        data_, originalFrames_ = interpretDicom.parse_dicom(128, src_path_)
+        # assert len(args) == 2;
         view_list = []
         for _ in 0, -1, len(originalFrames_) // 2:  # 随机取三帧
             pil_image = transforms.ToPILImage()((originalFrames_[_] * 255).astype(np.uint8))
@@ -143,7 +153,7 @@ def infer(*args):
         if view_1 == view_:
             print("视角判断相同")
             # raise ValueError
-        scale_ = interpretDicom.parse_scale(src_path_)
+        scale_ , Manufacturer_, SoftwareVersions_ = interpretDicom.parse_scale(src_path_)
         EDParameter_ = cardiac_parameter.cmpt_single_volum(maskED_, scale=scale_)  # 这里要优化时间，注意scale
         ESParameter_ = cardiac_parameter.cmpt_single_volum(maskES_, scale=scale_)
         EF_ = (float(EDParameter_[-1]) - float(ESParameter_[-1])) / float(EDParameter_[-1])
@@ -166,7 +176,8 @@ def infer(*args):
                                              scale=scale)
         EF_simpson = (float(EDV_simpson)-float(ESV_simpson)) / float(EDV_simpson)
 
-        datalist_merge =[("equipment", "philip-ie33"),
+        datalist_merge =[("Manufacturer", Manufacturer),
+                        ("Software Versions", SoftwareVersions),
                         ("view", view_,"",view_1),
                         ("frame", EDFrameNumber[0], ESFrameNumber[0],EDFrameNumber_[0], ESFrameNumber_[0]),
                         ("LV-length (cm)", EDParameter[0], ESParameter[0],EDParameter_[0],ESParameter_[0]),
@@ -178,7 +189,6 @@ def infer(*args):
                         ("LV-volume(simpson,ml)", ESV_simpson),
                         ("EF (simpson(%))", "%.2f" % (EF_simpson*100))
                         ]
-
         # return (img_64 , img_64_), datalist_merge
         return render_template("pic_simpson.html", pic_=img_64, pic_1=img_64_), \
                render_template("table_simpson.html", tables=datalist_merge)
