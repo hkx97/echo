@@ -38,62 +38,99 @@
 <!--      12312-->
 <!--    </a>-->
   <script type="text/javascript" >
+    var data_res = "none"
+    var image = "none" //后端返回的结果
 
-    var data_res
-    var image  //后端返回的结果
-
-
-    function upload_tabel() {
-          var load_area = document.getElementById("loading-center-absolute");
-          load_area.style.display = "";
-          $.ajax({
-                    type: "POST",
-                    url: "table",
-                    async: true,
-                    contentType:"application/json",
-                    data: JSON.stringify({data:data_res}),
-                    // dataType:"json",
-                    success: function(response){
-                        console.log("量化界面加载成功")
-                        load_area.style.display = "none";
-                        var newPage = window.open("这是乱写的url" ,"_blank");
-                        //将后台传过来的html页面写到新打开的浏览器窗口中显示
-                        newPage.document.write(response);
-                      // $("#showHtml").append(response);
-                        console.log(response)
-                    },
-                    error: function(result){
-                        console.log("量化结果返回失败")
-                    }
-                });
-        };
+    // function new here
+    function upload_tabel(){
+      if (data_res == "none"){
+        alert("暂未上传文件！")
+        location.reload()
+        return false
+      }
+      else {
+        var newPage = window.open("这是乱写的url", "_blank");
+        //将后台传过来的html页面写到新打开的浏览器窗口中显示
+        newPage.document.write(data_res);
+        // $("#showHtml").append(response);
+        console.log(data_res)
 
 
-        function upload_pic() {
-          var load_area = document.getElementById("loading-center-absolute");
-          load_area.style.display = "";
-          $.ajax({
-                    type: "POST",
-                    url: "pic",
-                    async: true,
-                    contentType:"application/json",
-                    data: JSON.stringify({data:image}),
-                    // dataType:"json",
-                    success: function(response){
-                        console.log("pic界面加载成功")
-                        load_area.style.display = "none";
-                        var newPage = window.open("这是乱写的url" ,"_blank");
-                        //将后台传过来的html页面写到新打开的浏览器窗口中显示
-                        newPage.document.write(response);
-                      // $("#showHtml").append(response);
-                        console.log(response)
-                    },
-                    error: function(result){
-                        console.log("pic界面加载失败")
-                    }
-                });
-        };
+      }    }
 
+
+    function upload_pic(){
+      if (image == "none"){
+      alert("暂未上传文件！")
+      location.reload()
+      return false
+      }
+      else{
+      var newPage = window.open("这是乱写的url" ,"_blank");
+      //将后台传过来的html页面写到新打开的浏览器窗口中显示
+      newPage.document.write(image);
+     // $("#showHtml").append(response);
+      console.log(image)
+
+      }
+
+
+    }
+
+
+
+
+    // function upload_tabel() {
+    //       var load_area = document.getElementById("loading-center-absolute");
+    //       load_area.style.display = "";
+    //       $.ajax({
+    //                 type: "POST",
+    //                 url: "table",
+    //                 async: true,
+    //                 contentType:"application/json",
+    //                 data: JSON.stringify({data:data_res}),
+    //                 // dataType:"json",
+    //                 success: function(response){
+    //                     console.log("量化界面加载成功")
+    //                     load_area.style.display = "none";
+    //                     var newPage = window.open("这是乱写的url" ,"_blank");
+    //                     //将后台传过来的html页面写到新打开的浏览器窗口中显示
+    //                     newPage.document.write(response);
+    //                   // $("#showHtml").append(response);
+    //                     console.log(response)
+    //                 },
+    //                 error: function(result){
+    //                     console.log("量化结果返回失败")
+    //                 }
+    //             });
+    //     };
+    //
+    //
+    //     function upload_pic() {
+    //       var load_area = document.getElementById("loading-center-absolute");
+    //       load_area.style.display = "";
+    //       $.ajax({
+    //                 type: "POST",
+    //                 url: "pic",
+    //                 async: true,
+    //                 contentType:"application/json",
+    //                 data: JSON.stringify({data:image}),
+    //                 // dataType:"json",
+    //                 success: function(response){
+    //                     console.log("pic界面加载成功")
+    //                     load_area.style.display = "none";
+    //                     var newPage = window.open("这是乱写的url" ,"_blank");
+    //                     //将后台传过来的html页面写到新打开的浏览器窗口中显示
+    //                     newPage.document.write(response);
+    //                   // $("#showHtml").append(response);
+    //                     console.log(response)
+    //                 },
+    //                 error: function(result){
+    //                     console.log("pic界面加载失败")
+    //                 }
+    //             });
+    //     };
+    //
 
 
     function upload_infer() {

@@ -179,11 +179,14 @@ def infer(*args):
                         ("EF (simpson(%))", "%.2f" % (EF_simpson*100))
                         ]
 
-        return (img_64 , img_64_), datalist_merge
+        # return (img_64 , img_64_), datalist_merge
+        return render_template("pic_simpson.html", pic_=img_64, pic_1=img_64_), \
+               render_template("table_simpson.html", tables=datalist_merge)
 
     except:
-        return img_64, datalist
-
+        # return img_64, datalist
+        return render_template("pic.html", pic_=img_64), \
+        render_template("table.html", tables=datalist)
 
 @app.route('/line')
 def line():
@@ -203,32 +206,32 @@ def about():
     return render_template("about.html")
 
 
-@app.route('/pic',methods=["POST","GET"])
-def pic():
-    try:
-        data = json.loads(request.get_data(as_text=True))
-        content = data["data"]
-    except:
-        return render_template("pic.html",pic_= None)
-    try:
-        assert len(content) == 2;
-        return render_template("pic_simpson.html", pic_=content[0], pic_1=content[1])
-    except:
-        return render_template("pic.html", pic_=content)
-
-
-@app.route('/table',methods=["POST","GET"])
-def table():
-    try:
-        data = json.loads(request.get_data(as_text=True))
-        content = data["data"]
-    except:
-        return render_template("table.html",tables=[["暂未上传","",""]])
-    try:
-        assert len(content) == 11;
-        return render_template("table_simpson.html", tables=content)
-    except:
-        return render_template("table.html", tables=content)
+# @app.route('/pic',methods=["POST","GET"])
+# def pic():
+#     try:
+#         data = json.loads(request.get_data(as_text=True))
+#         content = data["data"]
+#     except:
+#         return render_template("pic.html",pic_= None)
+#     try:
+#         assert len(content) == 2;
+#         return render_template("pic_simpson.html", pic_=content[0], pic_1=content[1])
+#     except:
+#         return render_template("pic.html", pic_=content)
+#
+#
+# @app.route('/table',methods=["POST","GET"])
+# def table():
+#     try:
+#         data = json.loads(request.get_data(as_text=True))
+#         content = data["data"]
+#     except:
+#         return render_template("table.html",tables=[["暂未上传","",""]])
+#     try:
+#         assert len(content) == 11;
+#         return render_template("table_simpson.html", tables=content)
+#     except:
+#         return render_template("table.html", tables=content)
 
 
 @app.route('/index')
